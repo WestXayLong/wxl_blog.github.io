@@ -1392,7 +1392,11 @@ input::placeholder {
   z-index: -999;
   width: 100%;
   height: 100%;
-  background: #d5d1ae;
+  background: -webkit-linear-gradient(315deg,#283048,#859398);
+  background: -moz-linear-gradient(315deg,#283048,#859398);
+  background: -o-linear-gradient(315deg,#283048,#859398);
+  background: -ms-linear-gradient(315deg,#283048,#859398);
+  background: linear-gradient(135deg,#283048,#859398);
   background-attachment: local;
   background-position: center;
   background-size: cover;
@@ -3165,6 +3169,13 @@ h1.page-title + .tag-cloud-list {
   background-attachment: scroll;
   background-position: bottom;
   background-size: cover;
+}
+#footer:before {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0,0,0,0.5);
+  content: '';
 }
 #footer-wrap {
   position: relative;
