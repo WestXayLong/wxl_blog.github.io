@@ -1,0 +1,171 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"><title>02-SpringSecurity的原理和执行流程 | wxl的个人博客</title><meta name="keywords" content="框架原理"><meta name="author" content="wxl"><meta name="copyright" content="wxl"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="SpringSecurity的原理和执行流程一、原理Spring Security本质上是一个过滤器链，里面包含着多个过滤器，用来拦截过滤对应的请求 在执行流程里面主要有两个核心的拦截器：  登陆验证拦截器AuthenticationProcessingFilter 资源管理拦截器AbstractSecurityInterceptor   但拦截器里面的实现需要一些组件来实现，所以就有了Authe">
+<meta property="og:type" content="article">
+<meta property="og:title" content="02-SpringSecurity的原理和执行流程">
+<meta property="og:url" content="https://westxaylong.github.io/2022/08/26/02_SpringSecurity%E7%9A%84%E5%8E%9F%E7%90%86%E5%92%8C%E6%89%A7%E8%A1%8C%E6%B5%81%E7%A8%8B/index.html">
+<meta property="og:site_name" content="wxl的个人博客">
+<meta property="og:description" content="SpringSecurity的原理和执行流程一、原理Spring Security本质上是一个过滤器链，里面包含着多个过滤器，用来拦截过滤对应的请求 在执行流程里面主要有两个核心的拦截器：  登陆验证拦截器AuthenticationProcessingFilter 资源管理拦截器AbstractSecurityInterceptor   但拦截器里面的实现需要一些组件来实现，所以就有了Authe">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://westxaylong.github.io/img/cate.jpg">
+<meta property="article:published_time" content="2022-08-26T09:00:00.000Z">
+<meta property="article:modified_time" content="2022-08-26T08:46:54.707Z">
+<meta property="article:author" content="wxl">
+<meta property="article:tag" content="框架原理">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://westxaylong.github.io/img/cate.jpg"><link rel="shortcut icon" href="/wxl_blog.github.io/img/favicon.png"><link rel="canonical" href="https://westxaylong.github.io/2022/08/26/02_SpringSecurity%E7%9A%84%E5%8E%9F%E7%90%86%E5%92%8C%E6%89%A7%E8%A1%8C%E6%B5%81%E7%A8%8B/"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/wxl_blog.github.io/css/index.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free/css/all.min.css" media="print" onload="this.media='all'"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui/dist/fancybox.min.css" media="print" onload="this.media='all'"><script>const GLOBAL_CONFIG = { 
+  root: '/wxl_blog.github.io/',
+  algolia: undefined,
+  localSearch: undefined,
+  translate: undefined,
+  noticeOutdate: undefined,
+  highlight: {"plugin":"highlighjs","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false},
+  copy: {
+    success: '复制成功',
+    error: '复制错误',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '',
+  date_suffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'fancybox',
+  Snackbar: undefined,
+  source: {
+    justifiedGallery: {
+      js: 'https://cdn.jsdelivr.net/npm/flickr-justified-gallery/dist/fjGallery.min.js',
+      css: 'https://cdn.jsdelivr.net/npm/flickr-justified-gallery/dist/fjGallery.min.css'
+    }
+  },
+  isPhotoFigcaption: false,
+  islazyload: false,
+  isAnchor: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: '02-SpringSecurity的原理和执行流程',
+  isPost: true,
+  isHome: false,
+  isHighlightShrink: false,
+  isToc: true,
+  postUpdate: '2022-08-26 16:46:54'
+}</script><noscript><style type="text/css">
+  #nav {
+    opacity: 1
+  }
+  .justified-gallery img {
+    opacity: 1
+  }
+
+  #recent-posts time,
+  #post-meta time {
+    display: inline !important
+  }
+</style></noscript><script>(win=>{
+    win.saveToLocal = {
+      set: function setWithExpiry(key, value, ttl) {
+        if (ttl === 0) return
+        const now = new Date()
+        const expiryDay = ttl * 86400000
+        const item = {
+          value: value,
+          expiry: now.getTime() + expiryDay,
+        }
+        localStorage.setItem(key, JSON.stringify(item))
+      },
+
+      get: function getWithExpiry(key) {
+        const itemStr = localStorage.getItem(key)
+
+        if (!itemStr) {
+          return undefined
+        }
+        const item = JSON.parse(itemStr)
+        const now = new Date()
+
+        if (now.getTime() > item.expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return item.value
+      }
+    }
+  
+    win.getScript = url => new Promise((resolve, reject) => {
+      const script = document.createElement('script')
+      script.src = url
+      script.async = true
+      script.onerror = reject
+      script.onload = script.onreadystatechange = function() {
+        const loadState = this.readyState
+        if (loadState && loadState !== 'loaded' && loadState !== 'complete') return
+        script.onload = script.onreadystatechange = null
+        resolve()
+      }
+      document.head.appendChild(script)
+    })
+  
+      win.activateDarkMode = function () {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      win.activateLightMode = function () {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
+        }
+      }
+      const t = saveToLocal.get('theme')
+    
+          if (t === 'dark') activateDarkMode()
+          else if (t === 'light') activateLightMode()
+        
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        if (asideStatus === 'hide') {
+          document.documentElement.classList.add('hide-aside')
+        } else {
+          document.documentElement.classList.remove('hide-aside')
+        }
+      }
+    
+    const detectApple = () => {
+      if(/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)){
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+    })(window)</script><meta name="generator" content="Hexo 6.2.0"></head><body><div id="web_bg"></div><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img is-center"><img src="/wxl_blog.github.io/images/avatar.jpg" onerror="onerror=null;src='/img/friend_404.gif'" alt="avatar"/></div><div class="sidebar-site-data site-data is-center"><a href="/wxl_blog.github.io/archives/"><div class="headline">文章</div><div class="length-num">16</div></a><a href="/wxl_blog.github.io/tags/"><div class="headline">标签</div><div class="length-num">1</div></a><a href="/wxl_blog.github.io/categories/"><div class="headline">分类</div><div class="length-num">7</div></a></div><hr/><div class="menus_items"><div class="menus_item"><a class="site-page" href="/wxl_blog.github.io/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/wxl_blog.github.io/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/wxl_blog.github.io/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/wxl_blog.github.io/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div></div></div></div><div class="post" id="body-wrap"><header class="post-bg" id="page-header" style="background-image: url('/wxl_blog.github.io/img/cate.jpg')"><nav id="nav"><span id="blog_name"><a id="site-name" href="/wxl_blog.github.io/">wxl的个人博客</a></span><div id="menus"><div class="menus_items"><div class="menus_item"><a class="site-page" href="/wxl_blog.github.io/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/wxl_blog.github.io/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/wxl_blog.github.io/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/wxl_blog.github.io/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div></div><div id="toggle-menu"><a class="site-page"><i class="fas fa-bars fa-fw"></i></a></div></div></nav><div id="post-info"><h1 class="post-title">02-SpringSecurity的原理和执行流程</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2022-08-26T09:00:00.000Z" title="发表于 2022-08-26 17:00:00">2022-08-26</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2022-08-26T08:46:54.707Z" title="更新于 2022-08-26 16:46:54">2022-08-26</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/wxl_blog.github.io/categories/Java%E6%A1%86%E6%9E%B6/">Java框架</a><i class="fas fa-angle-right post-meta-separator"></i><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/wxl_blog.github.io/categories/Java%E6%A1%86%E6%9E%B6/SpringSecurity/">SpringSecurity</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title="02-SpringSecurity的原理和执行流程"><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">阅读量:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div></header><main class="layout" id="content-inner"><div id="post"><article class="post-content" id="article-container"><h1 id="SpringSecurity的原理和执行流程"><a href="#SpringSecurity的原理和执行流程" class="headerlink" title="SpringSecurity的原理和执行流程"></a>SpringSecurity的原理和执行流程</h1><h2 id="一、原理"><a href="#一、原理" class="headerlink" title="一、原理"></a>一、原理</h2><p>Spring Security本质上是一个过滤器链，里面包含着多个过滤器，用来拦截过滤对应的请求</p>
+<p>在执行流程里面主要有两个核心的拦截器：</p>
+<ul>
+<li>登陆验证拦截器<code>AuthenticationProcessingFilter</code></li>
+<li>资源管理拦截器<code>AbstractSecurityInterceptor</code></li>
+</ul>
+<blockquote>
+<p>但拦截器里面的实现需要一些组件来实现，所以就有了<code>AuthenticationManager</code>认证管理器、<code>accessDecisionManager</code>决策管理器等组件来支撑。</p>
+</blockquote>
+<p><img src="D:\workfile\wps_file\note__picture\watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl81MTU0MjU2Ng==,size_16,color_FFFFFF,t_70.png" alt="在这里插入图片描述"></p>
+<blockquote>
+<p>FilterChainProxy是一个代理，真正起作用的是各个Filter，这些Filter作为Bean被Spring管理，是Spring Security核心，各有各的职责，不直接处理认证和授权，交由认证管理器和决策管理器处理！</p>
+</blockquote>
+<h2 id="二、执行流程"><a href="#二、执行流程" class="headerlink" title="二、执行流程"></a>二、执行流程</h2><h3 id="1-认证流程"><a href="#1-认证流程" class="headerlink" title="1 认证流程"></a>1 认证流程</h3><p><img src="D:\workfile\wps_file\note__picture\watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl81MTU0MjU2Ng==,size_16,color_FFFFFF,t_70-16615022192763.png" alt="认证流程图"></p>
+<ol>
+<li>用户提交用户名、密码被<code>SecurityFilterChain</code>中的 <code>UsernamePasswordAuthenticationFilter</code> 过滤器获取到， 封装为请求<code>Authentication</code>，通常情况下是<code>UsernamePasswordAuthenticationToken</code>这个实现类。</li>
+<li>然后过滤器将<code>Authentication</code>提交至认证管理器（AuthenticationManager）进行认证 。</li>
+<li>认证成功后， <code>AuthenticationManager</code> 身份管理器返回一个被填充满了信息的（包括上面提到的权限信息， 身份信息，细节信息，但密码通常会被移除） <code>Authentication</code> 实例。</li>
+<li><code>SecurityContextHolder</code> 安全上下文容器将第3步填充了信息的 <code>Authentication</code> ，通过 <code>SecurityContextHolder.getContext().setAuthentication(…)</code>方法，设置到其中。 可以看出<code>AuthenticationManager</code>接口（认证管理器）是认证相关的核心接口，也是发起认证的出发点，它 的实现类为<code>ProviderManager</code>。而Spring Security支持多种认证方式，因此<code>ProviderManager</code>维护着一个 List 列表，存放多种认证方式，最终实际的认证工作是由 <code>AuthenticationProvider</code>完成的。咱们知道web表单的对应的<code>AuthenticationProvider</code>实现类为 <code>DaoAuthenticationProvider</code>，它的内部又维护着一个<code>UserDetailsService</code>负责UserDetails的获取。最终 <code>AuthenticationProvider</code>将UserDetails填充至<code>Authentication</code>。</li>
+</ol>
+<h3 id="2-授权管理"><a href="#2-授权管理" class="headerlink" title="2 授权管理"></a>2 授权管理</h3><p><img src="D:\workfile\wps_file\note__picture\watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl81MTU0MjU2Ng==,size_16,color_FFFFFF,t_70-16615027891896.png" alt="授权管理流程"></p>
+<ol>
+<li>访问资源（即授权管理）、访问url时，会通过<code>FilterSecurityInterceptor</code>拦截器拦截，其中会调用<code>SecurityMetadataSource</code>的方法来获取被拦截url所需的全部权限</li>
+<li>再调用授权管理器<code>AccessDecisionManager</code>，这个授权管理器会通过spring的全局缓存<code>SecurityContextHolder</code>获取用户的权限信息，还会获取被拦截的url和被拦截url所需的全部权限</li>
+<li>然后根据所配的投票策略（有：一票决定、一票否定、少数服从多数等），如果权限足够，则决策通过，返回访问资源，请求放行，否则跳转到403页面</li>
+</ol>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta">文章作者: </span><span class="post-copyright-info"><a href="https://westxaylong.github.io">wxl</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta">文章链接: </span><span class="post-copyright-info"><a href="https://westxaylong.github.io/2022/08/26/02_SpringSecurity%E7%9A%84%E5%8E%9F%E7%90%86%E5%92%8C%E6%89%A7%E8%A1%8C%E6%B5%81%E7%A8%8B/">https://westxaylong.github.io/2022/08/26/02_SpringSecurity%E7%9A%84%E5%8E%9F%E7%90%86%E5%92%8C%E6%89%A7%E8%A1%8C%E6%B5%81%E7%A8%8B/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta">版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来自 <a href="https://westxaylong.github.io" target="_blank">wxl的个人博客</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/wxl_blog.github.io/tags/%E6%A1%86%E6%9E%B6%E5%8E%9F%E7%90%86/">框架原理</a></div><div class="post_share"><div class="social-share" data-image="/wxl_blog.github.io/img/cate.jpg" data-sites="facebook,twitter,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc/sharejs/dist/js/social-share.min.js" defer></script></div></div><nav class="pagination-post" id="pagination"><div class="next-post pull-full"><a href="/wxl_blog.github.io/2022/08/26/01_SpringSecurity%E7%9A%84%E7%AE%80%E4%BB%8B%E5%92%8C%E5%BF%AB%E9%80%9F%E4%BD%BF%E7%94%A8/"><img class="next-cover" src="/wxl_blog.github.io/img/cate.jpg" onerror="onerror=null;src='/wxl_blog.github.io/img/404.jpg'" alt="cover of next post"><div class="pagination-info"><div class="label">下一篇</div><div class="next_info">01-SpringSecurity的简介和快速使用</div></div></a></div></nav></div><div class="aside-content" id="aside-content"><div class="card-widget card-info"><div class="is-center"><div class="avatar-img"><img src="/wxl_blog.github.io/images/avatar.jpg" onerror="this.onerror=null;this.src='/wxl_blog.github.io/img/friend_404.gif'" alt="avatar"/></div><div class="author-info__name">wxl</div><div class="author-info__description"></div></div><div class="card-info-data site-data is-center"><a href="/wxl_blog.github.io/archives/"><div class="headline">文章</div><div class="length-num">16</div></a><a href="/wxl_blog.github.io/tags/"><div class="headline">标签</div><div class="length-num">1</div></a><a href="/wxl_blog.github.io/categories/"><div class="headline">分类</div><div class="length-num">7</div></a></div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#SpringSecurity%E7%9A%84%E5%8E%9F%E7%90%86%E5%92%8C%E6%89%A7%E8%A1%8C%E6%B5%81%E7%A8%8B"><span class="toc-number">1.</span> <span class="toc-text">SpringSecurity的原理和执行流程</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%80%E3%80%81%E5%8E%9F%E7%90%86"><span class="toc-number">1.1.</span> <span class="toc-text">一、原理</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%8C%E3%80%81%E6%89%A7%E8%A1%8C%E6%B5%81%E7%A8%8B"><span class="toc-number">1.2.</span> <span class="toc-text">二、执行流程</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-%E8%AE%A4%E8%AF%81%E6%B5%81%E7%A8%8B"><span class="toc-number">1.2.1.</span> <span class="toc-text">1 认证流程</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-%E6%8E%88%E6%9D%83%E7%AE%A1%E7%90%86"><span class="toc-number">1.2.2.</span> <span class="toc-text">2 授权管理</span></a></li></ol></li></ol></li></ol></div></div></div></div></main><footer id="footer" style="background-image: url('/wxl_blog.github.io/img/cate.jpg')"><div id="footer-wrap"><div class="copyright">&copy;2020 - 2022 By wxl</div><div class="framework-info"><span>框架 </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo</a><span class="footer-separator">|</span><span>主题 </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly</a></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="浅色和深色模式转换"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside_config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><button id="go-up" type="button" title="回到顶部"><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/wxl_blog.github.io/js/utils.js"></script><script src="/wxl_blog.github.io/js/main.js"></script><script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui/dist/fancybox.umd.min.js"></script><div class="js-pjax"></div><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script></div></body></html>
